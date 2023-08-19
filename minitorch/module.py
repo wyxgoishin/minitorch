@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple, Mapping
 
 
 class Module:
@@ -31,13 +31,15 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        self.training = True
+        for sub_module in self.modules():
+            sub_module.train()
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        self.training = False
+        for sub_module in self.modules():
+            sub_module.eval()
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -47,13 +49,22 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        formatted_parameters = self.formatted_parameters()
+        return list(zip(formatted_parameters.keys(), formatted_parameters.values()))
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        formatted_parameters = self.formatted_parameters()
+        return list(formatted_parameters.values())
+
+    def formatted_parameters(self) -> Dict[str, Parameter]:
+        "helper function for parametes and named_parameters"
+        parameters = self.__dict__["_parameters"]
+        for module_name, sub_module in self.__dict__["_modules"].items():
+            sub_parameters_origin = sub_module.formatted_parameters()
+            sub_parameters_formatted = {f"{module_name}.{key}": value for key, value in sub_parameters_origin.items()}
+            parameters.update(sub_parameters_formatted)
+        return parameters
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
