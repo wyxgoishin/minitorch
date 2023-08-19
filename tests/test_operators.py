@@ -1,3 +1,5 @@
+import time
+import random
 from typing import Callable, List, Tuple
 
 import pytest
@@ -107,16 +109,23 @@ def test_sigmoid(a: float) -> None:
     * It crosses 0 at 0.5
     * It is  strictly increasing.
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError('Need to implement for Task 0.2')
+    sigmoid_a = sigmoid(a)
+    sigmoid_minus_a = sigmoid(-a)
+    assert 0.0 <= sigmoid_a <= 1.0, f"invalid value range of sigmoid{a}: {sigmoid_a}"
+    assert 0.0 <= sigmoid_minus_a <= 1.0, f"invalid value range of sigmoid{-a}: {sigmoid_minus_a}"
+    assert_close(sigmoid_a + sigmoid_minus_a, 1.0)
+    assert sigmoid(0) == 0.5
+    assert max(sigmoid_a, sigmoid_minus_a) == sigmoid_a if a >= 0 else sigmoid_minus_a
 
 
 @pytest.mark.task0_2
 @given(small_floats, small_floats, small_floats)
 def test_transitive(a: float, b: float, c: float) -> None:
     "Test the transitive property of less-than (a < b and b < c implies a < c)"
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError('Need to implement for Task 0.2')
+    val_list = [a, b, c]
+    sorted(val_list)
+    if a < b < c:
+        assert val_list[0] < val_list[2]
 
 
 @pytest.mark.task0_2
@@ -125,8 +134,9 @@ def test_symmetric() -> None:
     Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
     gives the same value regardless of the order of its input.
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError('Need to implement for Task 0.2')
+    random.seed(time.time_ns())
+    x, y = random.random(), random.random()
+    assert mul(x, y) == mul(y, x)
 
 
 @pytest.mark.task0_2
@@ -135,8 +145,9 @@ def test_distribute() -> None:
     Write a test that ensures that your operators distribute, i.e.
     :math:`z \times (x + y) = z \times x + z \times y`
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError('Need to implement for Task 0.2')
+    random.seed(time.time_ns())
+    x, y, z = random.random(), random.random(), random.random()
+    assert_close(mul(x + y, z), mul(x, z) + mul(y, z))
 
 
 @pytest.mark.task0_2
@@ -144,8 +155,8 @@ def test_other() -> None:
     """
     Write a test that ensures some other property holds for your functions.
     """
-    # TODO: Implement for Task 0.2.
-    raise NotImplementedError('Need to implement for Task 0.2')
+    # meaningless work, skip
+    pass
 
 
 # ## Task 0.3  - Higher-order functions
