@@ -163,8 +163,8 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        h.ctx.save_for_backward(*h.inputs)
         mid_derivatives = h.last_fn.backward(h.ctx, d_output)
+        mid_derivatives = mid_derivatives if isinstance(mid_derivatives, Iterable) else (mid_derivatives, )
         return zip(h.inputs, mid_derivatives)
 
     def backward(self, d_output: Optional[float] = None) -> None:
@@ -192,9 +192,8 @@ def derivative_check(f: Any, *scalars: Scalar) -> None:
     out = f(*scalars)
     out.backward()
 
-    err_msg = """
-Derivative check at arguments f(%s) and received derivative f'=%f for argument %d,
-but was expecting derivative f'=%f from central difference."""
+    err_msg = "Derivative check at arguments f(%s) and received derivative f'=%f for argument %d, " \
+              "but was expecting derivative f'=%f from central difference."
     for i, x in enumerate(scalars):
         check = central_difference(f, *scalars, arg=i)
         print(str([x.data for x in scalars]), x.derivative, i, check)
@@ -204,6 +203,5 @@ but was expecting derivative f'=%f from central difference."""
             check.data,
             1e-2,
             1e-2,
-            err_msg=err_msg
-            % (str([x.data for x in scalars]), x.derivative, i, check.data),
+            err_msg=err_msg % (str([x.data for x in scalars]), x.derivative, i, check.data),
         )

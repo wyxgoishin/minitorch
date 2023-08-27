@@ -103,7 +103,7 @@ class Mul(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float, b: float) -> float:
-        ctx.save_for_backward((a, b))
+        ctx.save_for_backward(a, b)
         return operators.mul(a, b)
 
     @staticmethod
@@ -157,11 +157,13 @@ class ReLU(ScalarFunction):
 
     @staticmethod
     def forward(ctx: Context, a: float) -> float:
+        ctx.save_for_backward(a)
         return operators.relu(a)
 
     @staticmethod
     def backward(ctx: Context, d_output: float) -> float:
-        return operators.relu_back(d_output)
+        (a,) = ctx.saved_values
+        return operators.relu_back(a, d_output)
 
 
 class Exp(ScalarFunction):
