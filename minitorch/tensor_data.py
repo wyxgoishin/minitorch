@@ -64,8 +64,9 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index[idx] = ordinal / strides[idx]
         ordinal %= strides[idx]
 
+
 def broadcast_index(
-    big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
+        big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
 ) -> None:
     """
     Convert a `big_index` into `big_shape` to a smaller `out_index`
@@ -83,8 +84,11 @@ def broadcast_index(
     Returns:
         None
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError('Need to implement for Task 2.2')
+    n1, n2 = len(big_shape), len(shape)
+    i, j = n1 - 1, n2 - 1
+    while i >= 0 and j >= 0:
+        out_index[j] = min(big_index[i], shape[j] - 1)
+        i, j = i - 1, j - 1
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -101,8 +105,20 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     Raises:
         IndexingError : if cannot broadcast
     """
-    # TODO: Implement for Task 2.2.
-    raise NotImplementedError('Need to implement for Task 2.2')
+    n1, n2 = len(shape1), len(shape2)
+    ret_shape = []
+    i, j = n1 - 1, n2 - 1
+    while i >= 0 or j >= 0:
+        if i < 0:
+            ret_shape.append(shape2[j])
+        elif j < 0:
+            ret_shape.append(shape1[i])
+        elif shape1[i] == shape2[j] or min(shape1[i], shape2[j]) == 1:
+            ret_shape.append(max(shape1[i], shape2[j]))
+        else:
+            raise IndexingError
+        i, j = i - 1, j - 1
+    return tuple(reversed(ret_shape))
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
@@ -123,10 +139,10 @@ class TensorData:
     dims: int
 
     def __init__(
-        self,
-        storage: Union[Sequence[float], Storage],
-        shape: UserShape,
-        strides: Optional[UserStrides] = None,
+            self,
+            storage: Union[Sequence[float], Storage],
+            shape: UserShape,
+            strides: Optional[UserStrides] = None,
     ):
         if isinstance(storage, np.ndarray):
             self._storage = storage
