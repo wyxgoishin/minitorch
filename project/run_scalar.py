@@ -32,6 +32,7 @@ class Linear(minitorch.Module):
             self.weights.append([])
             for j in range(out_size):
                 self.weights[i].append(
+                    # init with range as [-1, 1], same as below
                     self.add_parameter(
                         f"weight_{i}_{j}", minitorch.Scalar(2 * (random.random() - 0.5))
                     )
@@ -46,6 +47,7 @@ class Linear(minitorch.Module):
     def forward(self, inputs):
         # ASSIGN1.5
         y = [b.value for b in self.bias]
+        # Y^T = W^T * X^T + B^T
         for i, x in enumerate(inputs):
             for j in range(len(y)):
                 y[j] = y[j] + x * self.weights[i][j].value
@@ -53,8 +55,8 @@ class Linear(minitorch.Module):
         # END ASSIGN1.5
 
 
-def default_log_fn(epoch, total_loss, correct, losses):
-    print("Epoch ", epoch, " loss ", total_loss, "correct", correct)
+def default_log_fn(epoch, total_loss, accuracy, losses):
+    print("Epoch ", epoch, "total_loss", total_loss, "accuracy", "%.2f%%" % accuracy)
 
 
 class ScalarTrain:
@@ -105,7 +107,7 @@ class ScalarTrain:
 
             # Logging
             if epoch % 10 == 0 or epoch == max_epochs:
-                log_fn(epoch, total_loss, correct, losses)
+                log_fn(epoch, total_loss, correct / data.N * 100, losses)
 
 
 if __name__ == "__main__":
