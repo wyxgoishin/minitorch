@@ -65,6 +65,14 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         ordinal %= strides[idx]
 
 
+def to_index_by_strides(ordinal: int, shape: Shape, strides: Strides) -> OutIndex:
+    out_index = np.zeros_like(shape)
+    for idx, val in enumerate(shape):
+        out_index[idx] = ordinal / strides[idx]
+        ordinal %= strides[idx]
+    return out_index
+
+
 def broadcast_index(
         big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
 ) -> None:
