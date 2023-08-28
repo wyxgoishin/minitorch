@@ -190,8 +190,8 @@ class LT(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        (a, b) = ctx.saved_values
-        pass
+        # TODO: Implement for Task 2.4.
+        raise NotImplementedError('Need to implement for Task 2.4')
 
 
 class EQ(Function):
