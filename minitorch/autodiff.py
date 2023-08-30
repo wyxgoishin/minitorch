@@ -124,7 +124,7 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
         derivative = id_derivative_mapping[variable.unique_id]
         if variable.is_leaf():
             variable.accumulate_derivative(derivative)
-        else:
+        elif not variable.is_constant():
             back = variable.chain_rule(derivative)
             for child_variable, child_derivative in back:
                 if child_variable.unique_id in id_derivative_mapping:

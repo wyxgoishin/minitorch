@@ -190,8 +190,7 @@ class LT(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        # TODO: Implement for Task 2.4.
-        raise NotImplementedError('Need to implement for Task 2.4')
+        return grad_output * 0.0, grad_output * 0.0
 
 
 class EQ(Function):
@@ -202,8 +201,7 @@ class EQ(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        # TODO: Implement for Task 2.4.
-        raise NotImplementedError('Need to implement for Task 2.4')
+        return grad_output * 0.0, grad_output * 0.0
 
 
 class IsClose(Function):
@@ -217,12 +215,19 @@ class Permute(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
         ctx.save_for_backward(a, order)
-        return a.permute(order)
+        a_storage, a_shape, _ = a.tuple()
+        order_storage, _, _ = order.tuple()
+        new_a_shape = tuple([a_shape[int(val)] for val in order_storage])
+        return a.make(a_storage, new_a_shape, backend=a.backend)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
-        # TODO: Implement for Task 2.4.
-        raise NotImplementedError('Need to implement for Task 2.4')
+        (a, order) = ctx.saved_values
+        grade_output_storage, grad_output_shape, _ = grad_output.tuple()
+        order_storage, _, _ = order.tuple()
+        invert_order_map = {int(val): idx for idx, val in enumerate(order_storage)}
+        grad_output_new_shape = tuple([grad_output_shape[invert_order_map[idx]] for idx in range(len(invert_order_map))])
+        return grad_output.make(grade_output_storage, grad_output_new_shape, backend=grad_output.backend), 0.0
 
 
 class View(Function):

@@ -45,8 +45,8 @@ class Linear(minitorch.Module):
         # END ASSIGN2.5
 
 
-def default_log_fn(epoch, total_loss, correct, losses):
-    print("Epoch ", epoch, " loss ", total_loss, "correct", correct)
+def default_log_fn(epoch, total_loss, accuracy, losses):
+    print("Epoch ", epoch, " total_loss ", total_loss, "accuracy", "%.2f%%" % accuracy)
 
 
 class TensorTrain:
@@ -92,7 +92,7 @@ class TensorTrain:
             if epoch % 10 == 0 or epoch == max_epochs:
                 y2 = minitorch.tensor(data.y)
                 correct = int(((out.detach() > 0.5) == y2).sum()[0])
-                log_fn(epoch, total_loss, correct, losses)
+                log_fn(epoch, total_loss, correct / data.N * 100, losses)
 
 
 if __name__ == "__main__":

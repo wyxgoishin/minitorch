@@ -371,11 +371,7 @@ def tensor_reduce(
                 indexes_to_reduce = list(range(i + j, i + a_step + j, a_strides[reduce_dim]))
                 vals_to_reduce = a_storage[indexes_to_reduce].reshape((-1, 1))
                 reduced_val = operators.reduce(fn, start)(vals_to_reduce)
-
-                a_index = to_index_by_strides(i + j, a_shape, a_strides)
-                out_index = a_index
-
-                out_idx = index_to_position(out_index, out_strides)
+                out_idx = int(i / a_step * a_strides[reduce_dim] + j)
                 out[out_idx] = reduced_val
 
     return _reduce
