@@ -6,6 +6,7 @@ from typing import Iterable, Optional, Sequence, Tuple, Union
 import numba
 import numpy as np
 import numpy.typing as npt
+from numba import prange
 from numpy import array, float64
 from typing_extensions import TypeAlias
 
@@ -42,8 +43,10 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
-
-    return index @ strides.T
+    ret = 0
+    for idx in range(len(index)):
+        ret += index[idx] * strides[idx]
+    return ret
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -67,7 +70,7 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
 
 def to_index_by_strides(ordinal: int, shape: Shape, strides: Strides) -> OutIndex:
     out_index = np.zeros_like(shape)
-    for idx, val in enumerate(shape):
+    for idx in range(len(strides)):
         out_index[idx] = ordinal / strides[idx]
         ordinal %= strides[idx]
     return out_index
@@ -93,10 +96,8 @@ def broadcast_index(
         None
     """
     n1, n2 = len(big_shape), len(shape)
-    i, j = n1 - 1, n2 - 1
-    while i >= 0 and j >= 0:
-        out_index[j] = min(big_index[i], shape[j] - 1)
-        i, j = i - 1, j - 1
+    for idx in range(1, min(n1, n2) + 1):
+        out_index[n2 - idx] = min(big_index[n1 - idx], shape[n2 - idx] - 1)
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
