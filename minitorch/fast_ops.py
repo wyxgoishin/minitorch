@@ -30,7 +30,7 @@ index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
 
 
-@njit(parallel=True)
+@njit()
 def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex) -> OutIndex:
     for idx in range(len(strides)):
         out_index[idx] = ordinal / strides[idx]
@@ -38,7 +38,7 @@ def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex) -> 
     return out_index
 
 
-@njit(parallel=True)
+@njit()
 def fast_ndarray_shape_prod(x):
     ret = 1
     for idx in prange(len(x)):
@@ -272,9 +272,8 @@ def tensor_reduce(
             to_index_by_strides(i, out_strides, out_index)
 
             for j in range(a_shape[reduce_dim]):
-                a_index = out_index.copy()
-                a_index[reduce_dim] = j
-                a_idx = index_to_position(a_index, a_strides)
+                out_index[reduce_dim] = j
+                a_idx = index_to_position(out_index, a_strides)
                 out[i] = fn(out[i], a_storage[a_idx])
 
     return njit(parallel=True)(_reduce)  # type: ignore
@@ -337,14 +336,14 @@ def _tensor_matrix_multiply(
     for i in prange(out_size):
         out_index = np.zeros_like(out_shape)
         to_index_by_strides(i, out_strides, out_index)
+        a_index = np.zeros_like(a_shape)
+        broadcast_index(out_index, out_shape, a_shape, a_index)
+        b_index = np.zeros_like(b_shape)
+        broadcast_index(out_index, out_shape, b_shape, b_index)
         for j in range(a_shape[-1]):
-            a_index = np.zeros_like(a_shape)
-            broadcast_index(out_index, out_shape, a_shape, a_index)
             a_index[-1] = j
             a_idx = index_to_position(a_index, a_strides)
 
-            b_index = np.zeros_like(b_shape)
-            broadcast_index(out_index, out_shape, b_shape, b_index)
             b_index[-2] = j
             b_idx = index_to_position(b_index, b_strides)
 
