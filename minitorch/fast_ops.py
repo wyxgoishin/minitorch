@@ -30,7 +30,7 @@ index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
 
 
-@njit()
+@njit(parallel=True)
 def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex) -> OutIndex:
     for idx in range(len(strides)):
         out_index[idx] = ordinal / strides[idx]
@@ -38,7 +38,7 @@ def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex) -> 
     return out_index
 
 
-@jit(parallel=True)
+@njit(parallel=True)
 def fast_ndarray_shape_prod(x):
     ret = 1
     for idx in prange(len(x)):
