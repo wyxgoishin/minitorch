@@ -266,16 +266,16 @@ def tensor_reduce(
             a_strides: Strides,
             reduce_dim: int,
     ) -> None:
-        a_size = fast_ndarray_shape_prod(out_shape)
-        a_step, a_stride, a_shape_step = a_shape[reduce_dim] * a_strides[reduce_dim], a_strides[reduce_dim], a_shape[
-            reduce_dim]
-        start = out[0]
-        for i in prange(a_size):
-            out_idx = i // a_step * a_stride + i % a_stride
-            reduce_val = start
-            for j in range(a_shape_step):
-                reduce_val = fn(reduce_val, a_storage[i + j * a_stride])
-            out[out_idx] = reduce_val
+        out_size = fast_ndarray_shape_prod(out_shape)
+        for i in prange(out_size):
+            out_index = np.zeros_like(out_shape)
+            to_index_by_strides(i, out_strides, out_index)
+
+            for j in range(a_shape[reduce_dim]):
+                a_index = out_index.copy()
+                a_index[reduce_dim] = j
+                a_idx = index_to_position(a_index, a_strides)
+                out[i] = fn(out[i], a_storage[a_idx])
 
     return njit(parallel=True)(_reduce)  # type: ignore
 
@@ -321,11 +321,34 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
+    """
+    This task actually requires implementing torch.matmul of Tensor A and B
+        Tensor A has shape [a1, a2, ..., an]
+        Tensor B has shape [b1, b2, ..., bn]
+    Condition:
+        1. an = bn - 1, namely A.shape[-1] = B.shape[-2] 
+        (because in matrix multiplication, last is view as col, least last is view as row)
+        2. [a1, a2, ..., an-2] and [b1, b2, ..., bn-2] are broadcastable
+    """
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
-    # TODO: Implement for Task 3.2.
-    raise NotImplementedError('Need to implement for Task 3.2')
+    out_size = fast_ndarray_shape_prod(out_shape)
+    for i in prange(out_size):
+        out_index = np.zeros_like(out_shape)
+        to_index_by_strides(i, out_strides, out_index)
+        for j in range(a_shape[-1]):
+            a_index = np.zeros_like(a_shape)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            a_index[-1] = j
+            a_idx = index_to_position(a_index, a_strides)
+
+            b_index = np.zeros_like(b_shape)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            b_index[-2] = j
+            b_idx = index_to_position(b_index, b_strides)
+
+            out[i] += a_storage[a_idx] * b_storage[b_idx]
 
 
 tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)

@@ -321,6 +321,28 @@ def rand(
     return tensor
 
 
+def arange(
+        shape: UserShape,
+        backend: TensorBackend = SimpleBackend,
+        requires_grad: bool = False,
+) -> Tensor:
+    """
+    Produce a range tensor of size `shape`.
+
+    Args:
+        shape : shape of tensor
+        backend : tensor backend
+        requires_grad : turn on autodifferentiation
+
+    Returns:
+        :class:`Tensor` : new tensor
+    """
+    vals = [idx + 1 for idx in range(int(operators.prod(shape)))]
+    tensor = minitorch.Tensor.make(vals, shape, backend=backend)
+    tensor.requires_grad_(requires_grad)
+    return tensor
+
+
 def _tensor(
     ls: Any,
     shape: UserShape,

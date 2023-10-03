@@ -171,8 +171,6 @@ class TensorData:
         self.dims = len(strides)
         self.size = int(prod(shape))
         self.shape = shape
-        if len(self._storage) != self.size:
-            print("debug")
         assert len(self._storage) == self.size
 
     def to_cuda_(self) -> None:  # pragma: no cover
