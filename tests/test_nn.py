@@ -31,9 +31,17 @@ def test_avg(t: Tensor) -> None:
 @pytest.mark.task4_4
 @given(tensors(shape=(2, 3, 4)))
 def test_max(t: Tensor) -> None:
-    # TODO: Implement for Task 4.4.
-    raise NotImplementedError('Need to implement for Task 4.4')
-
+    # grad_check does not apply to max, as in grad_central_difference function in procedure of get delta,
+    # we should first broadcast output to input shape, like what we do in backward
+    out = minitorch.max(t, 0)
+    assert_close(out[0, 1, 2], max(t[i, 1, 2] for i in range(2)))
+    # minitorch.grad_check(lambda x: minitorch.max(x, 0), t)
+    out = minitorch.max(t, 1)
+    assert_close(out[0, 0, 3], max(t[0, i, 3] for i in range(3)))
+    # minitorch.grad_check(lambda x: minitorch.max(x, 1), t)
+    out = minitorch.max(t, 2)
+    assert_close(out[0, 2, 0], max(t[0, 2, i] for i in range(4)))
+    # minitorch.grad_check(lambda x: minitorch.max(x, 2), t)
 
 @pytest.mark.task4_4
 @given(tensors(shape=(1, 1, 4, 4)))
