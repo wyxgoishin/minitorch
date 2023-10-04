@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange, jit
 
 from .autodiff import Context
 from .tensor import Tensor
@@ -12,7 +12,7 @@ from .tensor_data import (
     Strides,
     broadcast_index,
     index_to_position,
-    to_index,
+    to_index, OutIndex,
 )
 from .tensor_functions import Function
 
@@ -22,6 +22,13 @@ from .tensor_functions import Function
 to_index = njit(inline="always")(to_index)
 index_to_position = njit(inline="always")(index_to_position)
 broadcast_index = njit(inline="always")(broadcast_index)
+
+
+@njit()
+def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex):
+    for idx in range(len(strides)):
+        out_index[idx] = ordinal / strides[idx]
+        ordinal %= strides[idx]
 
 
 def _tensor_conv1d(
@@ -80,11 +87,27 @@ def _tensor_conv1d(
     s1 = input_strides
     s2 = weight_strides
 
-    # TODO: Implement for Task 4.1.
-    raise NotImplementedError('Need to implement for Task 4.1')
+    # actually calculate matmul of (b, in * kw, w) and (out, in * kw)
+    for i in prange(out_size):
+        out_index = np.zeros_like(out_shape)
+        to_index_by_strides(i, out_strides, out_index)
+        out_batch, out_channel, out_idx = out_index
+        # as we do not ensure that last two stride of weight are both one,
+        # so we can not just range over in_channels * kw but have to split into two range
+        for in_channel in range(in_channels):
+            for weight_kw in range(kw):
+                input_width = out_idx - weight_kw if reverse else out_idx + weight_kw
+                if input_width >= width or input_width < 0:
+                    continue
+
+                weight_idx = out_channel * weight_strides[0] + in_channel * weight_strides[1] + \
+                             weight_kw * weight_strides[2]
+                input_idx = out_batch * input_strides[0] + in_channel * input_strides[1] + \
+                            input_width * input_strides[2]
+                out[i] += input[input_idx] * weight[weight_idx]
 
 
-tensor_conv1d = njit(parallel=True)(_tensor_conv1d)
+tensor_conv1d = _tensor_conv1d
 
 
 class Conv1dFun(Function):
@@ -146,17 +169,17 @@ conv1d = Conv1dFun.apply
 
 
 def _tensor_conv2d(
-    out: Tensor,
-    out_shape: Shape,
-    out_strides: Strides,
-    out_size: int,
-    input: Tensor,
-    input_shape: Shape,
-    input_strides: Strides,
-    weight: Tensor,
-    weight_shape: Shape,
-    weight_strides: Strides,
-    reverse: bool,
+        out: Tensor,
+        out_shape: Shape,
+        out_strides: Strides,
+        out_size: int,
+        input: Tensor,
+        input_shape: Shape,
+        input_strides: Strides,
+        weight: Tensor,
+        weight_shape: Shape,
+        weight_strides: Strides,
+        reverse: bool,
 ) -> None:
     """
     2D Convolution implementation.
@@ -195,9 +218,9 @@ def _tensor_conv2d(
     out_channels_, in_channels_, kh, kw = weight_shape
 
     assert (
-        batch == batch_
-        and in_channels == in_channels_
-        and out_channels == out_channels_
+            batch == batch_
+            and in_channels == in_channels_
+            and out_channels == out_channels_
     )
 
     s1 = input_strides
