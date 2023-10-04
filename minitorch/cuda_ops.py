@@ -339,7 +339,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
 
     x = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     y = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
-    out_idx = x + BLOCK_DIM * y
+    out_idx = x + cuda.gridDim.x * cuda.blockDim.x * y
     if out_idx >= len(out):
         return
     i, j = out_idx // size, out_idx % size
@@ -391,25 +391,25 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
-    idx_per_grid = cuda.blockDim.x * cuda.blockDim.y * cuda.gridDim.x * cuda.gridDim.y
-    idx_per_grid_x = cuda.blockDim.x * cuda.gridDim.x
-    i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
-    j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
-    out_idx = cuda.blockIdx.z * idx_per_grid + idx_per_grid_x * j + i
+    x, y = cuda.grid(2)
+    out_idx = x + y * cuda.blockDim.x * cuda.gridDim.x + cuda.blockIdx.z * cuda.blockDim.x * cuda.blockDim.y * cuda.gridDim.x * cuda.gridDim.y
     if out_idx >= out_size:
         return
 
     out_index = cuda.local.array(MAX_DIMS, numba.int32)
     to_index_by_strides(out_idx, out_strides, out_index)
     a_index = cuda.local.array(MAX_DIMS, numba.int32)
-    broadcast_index(out_index, out_shape, a_shape, a_index)
-    b_index = cuda.local.array(MAX_DIMS, numba.int32)
-    broadcast_index(out_index, out_shape, b_shape, b_index)
     for k in range(a_shape[-1]):
-        a_index[-1] = k
+        broadcast_index(out_index, out_shape, a_shape, a_index)
+        # warning: len(a_index) != len(a_shape)
+        a_index[len(a_shape) - 1] = k
         a_idx = index_to_position(a_index, a_strides)
-        b_index[-2] = k
-        b_idx = index_to_position(b_index, b_strides)
+
+        # save resource to avoid 701
+        broadcast_index(out_index, out_shape, b_shape, a_index)
+        a_index[len(a_shape) - 2] = k
+        b_idx = index_to_position(a_index, b_strides)
+
         out[out_idx] += a_storage[a_idx] * b_storage[b_idx]
 
 
