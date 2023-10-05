@@ -1,8 +1,11 @@
+import os.path
+
 from mnist import MNIST
 
 import minitorch
 
-mndata = MNIST("project/data/")
+work_dir = os.path.abspath(os.path.curdir)
+mndata = MNIST(os.path.join(work_dir, "data"))
 images, labels = mndata.load_training()
 
 BACKEND = minitorch.TensorBackend(minitorch.FastOps)
