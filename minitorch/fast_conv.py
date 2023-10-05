@@ -32,17 +32,17 @@ def to_index_by_strides(ordinal: int, strides: Strides, out_index: OutIndex):
 
 
 def _tensor_conv1d(
-    out: Tensor,
-    out_shape: Shape,
-    out_strides: Strides,
-    out_size: int,
-    input: Tensor,
-    input_shape: Shape,
-    input_strides: Strides,
-    weight: Tensor,
-    weight_shape: Shape,
-    weight_strides: Strides,
-    reverse: bool,
+        out: Tensor,
+        out_shape: Shape,
+        out_strides: Strides,
+        out_size: int,
+        input: Tensor,
+        input_shape: Shape,
+        input_strides: Strides,
+        weight: Tensor,
+        weight_shape: Shape,
+        weight_strides: Strides,
+        reverse: bool,
 ) -> None:
     """
     1D Convolution implementation.
@@ -80,9 +80,9 @@ def _tensor_conv1d(
     out_channels_, in_channels_, kw = weight_shape
 
     assert (
-        batch == batch_
-        and in_channels == in_channels_
-        and out_channels == out_channels_
+            batch == batch_
+            and in_channels == in_channels_
+            and out_channels == out_channels_
     )
     s1 = input_strides
     s2 = weight_strides
@@ -229,8 +229,26 @@ def _tensor_conv2d(
     s10, s11, s12, s13 = s1[0], s1[1], s1[2], s1[3]
     s20, s21, s22, s23 = s2[0], s2[1], s2[2], s2[3]
 
-    # TODO: Implement for Task 4.2.
-    raise NotImplementedError('Need to implement for Task 4.2')
+    for i in prange(out_size):
+        out_index = np.zeros_like(out_shape)
+        to_index_by_strides(i, out_strides, out_index)
+        out_batch, out_channel, out_i, out_j = out_index
+        for in_channel in range(in_channels):
+            for weight_kh in range(kh):
+                input_height = out_j - weight_kh if reverse else out_j + weight_kh
+                if input_height >= height or input_height < 0:
+                    continue
+
+                for weight_kw in range(kw):
+                    input_width = out_i - weight_kw if reverse else out_i + weight_kw
+                    if input_width >= width or input_width < 0:
+                        continue
+
+                    weight_idx = out_channel * weight_strides[0] + in_channel * weight_strides[1] + \
+                                 weight_kh * weight_strides[2] + weight_kw * weight_strides[3]
+                    input_idx = out_batch * input_strides[0] + in_channel * input_strides[1] + \
+                                input_height * input_strides[2] + input_width * input_strides[3]
+                    out[i] += input[input_idx] * weight[weight_idx]
 
 
 tensor_conv2d = njit(parallel=True, fastmath=True)(_tensor_conv2d)
