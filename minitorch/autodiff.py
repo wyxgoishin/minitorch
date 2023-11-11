@@ -66,45 +66,18 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    graph = {}
-    id_variable_mapping = {variable.unique_id: variable}
-    variable_ids = {variable.unique_id, }
-    parent_variable_count = {variable.unique_id: 0}
-    while len(variable_ids) > 0:
-        root_variable = id_variable_mapping[variable_ids.pop()]
-        if root_variable.unique_id not in graph:
-            graph[root_variable.unique_id] = {}
-        if root_variable.history and root_variable.history.inputs:
-            for child_variable in root_variable.history.inputs:
-                variable_ids.add(child_variable.unique_id)
-                id_variable_mapping[child_variable.unique_id] = child_variable
-                if child_variable.unique_id in graph[root_variable.unique_id]:
-                    graph[root_variable.unique_id][child_variable.unique_id] += 1
-                else:
-                    graph[root_variable.unique_id][child_variable.unique_id] = 1
-                if child_variable.unique_id in parent_variable_count:
-                    parent_variable_count[child_variable.unique_id] += 1
-                else:
-                    parent_variable_count[child_variable.unique_id] = 1
-
-    root_variable_ids = []
-    for unique_id in parent_variable_count:
-        if parent_variable_count[unique_id] == 0:
-            root_variable_ids.append(unique_id)
-
-    sorted_variables = []
-    while len(root_variable_ids) > 0:
-        root_variable = id_variable_mapping[root_variable_ids[0]]
-        root_variable_ids = root_variable_ids[1:]
-        sorted_variables.append(root_variable)
-        if root_variable.unique_id in graph:
-            for child_variable_id in graph[root_variable.unique_id]:
-                # Note that one root node can have multi out degree to one child node
-                parent_variable_count[child_variable_id] -= graph[root_variable.unique_id][child_variable_id]
-                if parent_variable_count[child_variable_id] == 0:
-                    root_variable_ids.append(child_variable_id)
-
-    return sorted_variables
+    """
+    Task Description:
+        A neural network is formed by several nodes and operation between nodes. A node is a variable with its
+        history field recoding the prev nodes (history.inputs) and operation(history.last_fn) to obtain it. If there 
+        are no prev nodes, a node is a leaf node. A variable is defined by a unique_id. Given the final output node
+        of a neural network, you are required to return the topological sort result of all nodes in the neural network.
+        It is to be noted that the prev nodes of one node may be same, e.g., y = x ^ 2. Node y has tow prev nodes which
+        actually both refer to node x.
+    How to Check:
+        run pytest -m task1_4 and check if all tests are passed.(You may need to install the requirements ahead)
+    """
+    raise NotImplementedError("Need to be implemented for topological sort task")
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
